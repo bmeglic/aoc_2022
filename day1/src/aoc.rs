@@ -35,8 +35,14 @@ impl Elf {
 
         let mut i = 0;
         while i < num {
-            let max_elf = elves_tmp.iter().max_by(|x, y| x.cmp(y)).unwrap();
-            let max_elf = elves_tmp.remove(elves_tmp.iter().position(|x| *x == *max_elf).unwrap());
+            let index = elves_tmp
+                .iter()
+                .enumerate()
+                .max_by(|(_, x), (_, y)| x.cmp(y))
+                .map(|(index, _)| index)
+                .unwrap();
+            dbg!(&index);
+            let max_elf = elves_tmp.remove(index);
 
             elves_max.push(max_elf);
             i += 1;
