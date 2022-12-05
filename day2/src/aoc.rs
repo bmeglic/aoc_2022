@@ -11,7 +11,7 @@ where
 }
 
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone, Copy)]
 enum GameMove
 {
     Rock,
@@ -20,7 +20,7 @@ enum GameMove
     UNKNOWN,
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 enum GameResult
 {
     Win,
@@ -28,6 +28,29 @@ enum GameResult
     Draw
 }
 
+
+fn calc_my_move(mine: &GameResult, opp: &GameMove) -> GameMove
+{
+    if *mine == GameResult::Draw {
+        *opp
+    }
+    else if *mine == GameResult::Win {
+        match *opp {
+            GameMove::Rock => GameMove::Paper,
+            GameMove::Paper => GameMove::Scissors,
+            GameMove::Scissors => GameMove::Rock,
+            GameMove::UNKNOWN => GameMove::Rock,
+        }
+    }
+    else {
+        match *opp {
+            GameMove::Rock => GameMove::Scissors,
+            GameMove::Paper => GameMove::Rock,
+            GameMove::Scissors => GameMove::Paper,
+            GameMove::UNKNOWN => GameMove::Rock,
+        }
+    }
+}
 
 fn calc_game(mine: &GameMove, opp: &GameMove) -> GameResult
 {
@@ -44,9 +67,9 @@ fn calc_game(mine: &GameMove, opp: &GameMove) -> GameResult
         GameResult::Win
     }
     else {
-        GameResult::Loss
+       GameResult::Loss
     }
-}
+ }
 
 fn conv_opponent_move(m: &str) -> GameMove
 {
@@ -64,19 +87,19 @@ fn conv_opponent_move(m: &str) -> GameMove
     }
 }
 
-fn conv_mine_move(m: &str) -> GameMove
+fn conv_mine_move(m: &str) -> GameResult 
 {
     if m == "Y" {
-        GameMove::Paper
+        GameResult::Draw 
     }
     else if m == "X" {
-        GameMove::Rock
+        GameResult::Loss 
     }
     else if m == "Z" {
-        GameMove::Scissors
+        GameResult::Win
     }
     else {
-        GameMove::UNKNOWN
+        GameResult::Draw // should never happen with controlled inputs
     }
 }
 
@@ -97,11 +120,12 @@ pub fn run(file: String) {
 
                 //dbg!(&opp);
                 //dbg!(&mine);
+                let my_move = calc_my_move(&mine, &opp);
 
-                let res = calc_game(&mine, &opp);
+                let res = calc_game(&my_move, &opp);
                 //dbg!(&res);
 
-                let mut score = match mine {
+                let mut score = match my_move {
                     GameMove::Rock => 1,
                     GameMove::Paper => 2,
                     GameMove::Scissors => 3,
