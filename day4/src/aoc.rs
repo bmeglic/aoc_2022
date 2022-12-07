@@ -31,10 +31,19 @@ impl Section {
             false
         }
     }
+
+    fn is_overlapping(&self, other: &Self) -> bool {
+        if self.start <= other.end && self.end >= other.start {
+            true
+        } else {
+            false
+        }
+    }
 }
 
 pub fn run(file: String) {
-    let mut sum = 0;
+    let mut sum_contained = 0;
+    let mut sum_overlap = 0;
 
     if let Ok(lines) = read_lines(&file) {
         for line in lines {
@@ -58,11 +67,16 @@ pub fn run(file: String) {
                 );
 
                 if first.is_contained(&second) || second.is_contained(&first) {
-                    sum += 1;
+                    sum_contained += 1;
+                }
+
+                if first.is_overlapping(&second) || second.is_overlapping(&first) {
+                    sum_overlap += 1;
                 }
             }
         }
-        println!("Is contained: {}", sum);
+        println!("Is contained: {}", sum_contained);
+        println!("Is overlapping: {}", sum_overlap);
     } else {
         println!("Could not open/read file: {}", &file);
     }
