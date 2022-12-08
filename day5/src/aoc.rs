@@ -14,7 +14,7 @@ where
 
 #[derive(Debug)]
 struct Command {
-    num: u32,
+    num: usize,
     source: usize,
     destination: usize,
 }
@@ -37,7 +37,7 @@ fn parse_stack(line: &str, stacks: &mut Vec<VecDeque<Crate>>) {
         .step_by(4)
         .enumerate()
         .filter(|(_, ch)| ch.is_alphabetic() )
-        .for_each(|(i, ch)| stacks[i].push_back( Crate { contents: ch }));
+        .for_each(|(i, ch)| stacks[i].push_front( Crate { contents: ch }));
 }
 
 fn parse_command(line: &str) -> Result<Command, String> {
@@ -58,16 +58,10 @@ fn parse_command(line: &str) -> Result<Command, String> {
 
 fn execute_command(cmd: Command, stacks: &mut Vec<VecDeque<Crate>>) {
 
-    let mut cnt = cmd.num;
-    loop {
-        if cnt == 0 {
-            break;
-        }
-        let cr = stacks[cmd.source as usize].pop_front().unwrap();
-        stacks[cmd.destination as usize].push_front(cr);
+    let rem = stacks[cmd.source].len() - cmd.num;
+    let mut pop = stacks[cmd.source].split_off(rem);
 
-        cnt = cnt - 1;
-    } 
+    stacks[cmd.destination].append(&mut pop);
 }
 
 pub fn run(file: String) {
@@ -91,15 +85,17 @@ pub fn run(file: String) {
                     if let Ok(cmd) = parse_command(&line) {
                         execute_command(cmd, &mut stacks);
                     }
-                    //dbg!(&cmd);
                 }
             }
         }
 
         print!("Stack: ");
         for stack in stacks {
-            if let Some(cr) = stack.get(0) {
-                print!("{}", cr.contents);
+            if stack.len() > 0 {
+
+                if let Some(cr) = stack.get(stack.len()-1) {
+                    print!("{}", cr.contents);
+                }
             }
         }
         println!("");
