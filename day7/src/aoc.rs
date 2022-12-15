@@ -93,18 +93,36 @@ pub fn run(file: String) {
         println!("Could not open/read file: {}", &file);
     }
 
-    let sum = fs
-        .traverse_pre_order(fs.root_node_id().unwrap())
+    /*
+        let sum = fs
+            .traverse_pre_order(fs.root_node_id().unwrap())
+            .unwrap()
+            .filter(|n| !n.children().is_empty())
+            .map(|n| calc_size(&fs, n))
+            .filter(|&n| n <= 100_000)
+            .inspect(|n| {
+                dbg!(&n);
+            })
+            .sum::<usize>();
+        println!("sum: {}", sum);
+    */
+
+    let total = calc_size(&fs, fs.get(fs.root_node_id().unwrap()).unwrap());
+    println!("total {}", total);
+
+    let space_to_free = 30000000 - (70000000 - total);
+    let size_to_delete = fs
+        .traverse_post_order(fs.root_node_id().unwrap())
         .unwrap()
         .filter(|n| !n.children().is_empty())
         .map(|n| calc_size(&fs, n))
-        .filter(|&n| n <= 100_000)
+        .filter(|&n| n >= space_to_free)
         .inspect(|n| {
             dbg!(&n);
         })
-        .sum::<usize>();
-
-    println!("sum: {}", sum);
+        .min()
+        .unwrap();
+    println!("To delete folder with size: {}", size_to_delete);
 
     //let mut s = String::new();
     //fs.write_formatted(&mut s).unwrap();
