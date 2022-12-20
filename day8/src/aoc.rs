@@ -2,6 +2,7 @@ use grid::*;
 use std::fs::File;
 use std::io::{self, BufRead};
 use std::path::Path;
+use itertools::Itertools;
 
 fn read_lines<P>(filename: P) -> io::Result<io::Lines<io::BufReader<File>>>
 where
@@ -17,6 +18,7 @@ fn get_coord(grid_size: (usize, usize), index: &usize) -> (usize, usize) {
 
     (r, c)
 }
+
 
 pub fn run(file: String) {
     let mut forest: Grid<u8> = Grid::init(0, 0, 0);
@@ -39,6 +41,7 @@ pub fn run(file: String) {
             .enumerate()
             .filter(|(i, val)| {
                 let (row, col) = get_coord(forest.size(), i);
+                //println!("Processing: {}.{}", row, col);
                 if row == 0
                     || col == 0
                     || row == (forest.size().0 - 1)
@@ -47,47 +50,43 @@ pub fn run(file: String) {
                     return true;
                 }
 
-                let mut highest = 0;
-                for r in 0..row {
-                    let val_edge = forest.get(r, col).unwrap();
-                    if *val_edge > highest {
-                        highest = *val_edge;
-                    }
-                }
-                if **val > highest {
+                let highest = (0..row)
+                    .into_iter()
+                    .cartesian_product(col..col+1)
+                    .map(|(x,y)| forest.get(x,y).unwrap())
+                    .max()
+                    .unwrap();
+                if *val > highest {
                     return true;
                 }
 
-                highest = 0;
-                for r in row + 1..forest.size().0 {
-                    let val_edge = forest.get(r, col).unwrap();
-                    if *val_edge > highest {
-                        highest = *val_edge;
-                    }
-                }
-                if **val > highest {
+                let highest = (row+1..forest.size().0)
+                    .into_iter()
+                    .cartesian_product(col..col+1)
+                    .map(|(x,y)| forest.get(x,y).unwrap())
+                    .max()
+                    .unwrap();
+                if *val > highest {
                     return true;
                 }
 
-                highest = 0;
-                for c in 0..col {
-                    let val_edge = forest.get(row, c).unwrap();
-                    if *val_edge > highest {
-                        highest = *val_edge;
-                    }
-                }
-                if **val > highest {
+                let highest = (row..row+1)
+                    .into_iter()
+                    .cartesian_product(0..col)
+                    .map(|(x,y)| forest.get(x,y).unwrap())
+                    .max()
+                    .unwrap();
+                if *val > highest {
                     return true;
                 }
 
-                highest = 0;
-                for c in col + 1..forest.size().1 {
-                    let val_edge = forest.get(row, c).unwrap();
-                    if *val_edge > highest {
-                        highest = *val_edge;
-                    }
-                }
-                if **val > highest {
+                let highest = (row..row+1)
+                    .into_iter()
+                    .cartesian_product(col+1..forest.size().1)
+                    .map(|(x,y)| forest.get(x,y).unwrap())
+                    .max()
+                    .unwrap();
+                if *val > highest {
                     return true;
                 }
 
