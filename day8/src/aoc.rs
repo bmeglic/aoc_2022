@@ -1,8 +1,10 @@
 use grid::*;
+use itertools::FoldWhile;
+use itertools::FoldWhile::{Continue, Done};
+use itertools::Itertools;
 use std::fs::File;
 use std::io::{self, BufRead};
 use std::path::Path;
-use itertools::Itertools;
 
 fn read_lines<P>(filename: P) -> io::Result<io::Lines<io::BufReader<File>>>
 where
@@ -12,13 +14,28 @@ where
     Ok(io::BufReader::new(file).lines())
 }
 
-fn get_coord(grid_size: (usize, usize), index: &usize) -> (usize, usize) {
+fn get_coord(grid_size: (usize, usize), index: usize) -> (usize, usize) {
     let r = index / grid_size.0;
     let c = index % grid_size.0;
 
     (r, c)
 }
 
+fn acc_scenic_score(
+    forest: &Grid<u8>,
+    acc: usize,
+    val: &u8,
+    x: usize,
+    y: usize,
+) -> FoldWhile<usize> {
+    let val_edge = forest.get(x, y).unwrap();
+
+    if val > val_edge {
+        Continue(acc + 1)
+    } else {
+        Done(acc + 1)
+    }
+}
 
 pub fn run(file: String) {
     let mut forest: Grid<u8> = Grid::init(0, 0, 0);
@@ -36,10 +53,10 @@ pub fn run(file: String) {
 
         //dbg!(&forest);
 
-        let visible = forest
+        let scenic_score = forest
             .iter()
             .enumerate()
-            .filter(|(i, val)| {
+            .map(|(i, val)| {
                 let (row, col) = get_coord(forest.size(), i);
                 //println!("Processing: {}.{}", row, col);
                 if row == 0
@@ -47,54 +64,37 @@ pub fn run(file: String) {
                     || row == (forest.size().0 - 1)
                     || col == (forest.size().1 - 1)
                 {
-                    return true;
+                    return 0;
                 }
 
-                let highest = (0..row)
-                    .into_iter()
-                    .cartesian_product(col..col+1)
-                    .map(|(x,y)| forest.get(x,y).unwrap())
-                    .max()
-                    .unwrap();
-                if *val > highest {
-                    return true;
-                }
+                let left = (0..col)
+                    .rev()
+                    //.inspect(|c| { dbg!(c); })
+                    .fold_while(0, |acc, c| acc_scenic_score(&forest, acc, val, row, c))
+                    .into_inner();
 
-                let highest = (row+1..forest.size().0)
-                    .into_iter()
-                    .cartesian_product(col..col+1)
-                    .map(|(x,y)| forest.get(x,y).unwrap())
-                    .max()
-                    .unwrap();
-                if *val > highest {
-                    return true;
-                }
+                let right = (col + 1..forest.size().1)
+                    //.inspect(|c| { dbg!(c); })
+                    .fold_while(0, |acc, c| acc_scenic_score(&forest, acc, val, row, c))
+                    .into_inner();
 
-                let highest = (row..row+1)
-                    .into_iter()
-                    .cartesian_product(0..col)
-                    .map(|(x,y)| forest.get(x,y).unwrap())
-                    .max()
-                    .unwrap();
-                if *val > highest {
-                    return true;
-                }
+                let top = (0..row)
+                    .rev()
+                    //.inspect(|r| { dbg!(r); })
+                    .fold_while(0, |acc, r| acc_scenic_score(&forest, acc, val, r, col))
+                    .into_inner();
 
-                let highest = (row..row+1)
-                    .into_iter()
-                    .cartesian_product(col+1..forest.size().1)
-                    .map(|(x,y)| forest.get(x,y).unwrap())
-                    .max()
-                    .unwrap();
-                if *val > highest {
-                    return true;
-                }
+                let bottom = (row + 1..forest.size().0)
+                    //.inspect(|r| { dbg!(r); })
+                    .fold_while(0, |acc, r| acc_scenic_score(&forest, acc, val, r, col))
+                    .into_inner();
 
-                false
+                left * right * top * bottom
             })
-            .count();
+            .max()
+            .unwrap();
 
-        println!("Visible trees: {}", visible);
+        println!("Scenic score: {}", scenic_score);
     } else {
         println!("Could not open/read file: {}", &file);
     }
