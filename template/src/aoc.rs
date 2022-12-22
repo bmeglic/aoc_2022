@@ -12,8 +12,8 @@ where
 
 pub fn run(file: String) {
     if let Ok(lines) = read_lines(&file) {
-        for line in lines {
-            if let Ok(line) = line {}
+        for line in lines.flatten() {
+            println!("{}", line);
         }
     } else {
         println!("Could not open/read file: {}", &file);
