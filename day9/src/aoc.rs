@@ -36,30 +36,10 @@ impl Coord {
     fn follow(mut self, other: &Self) -> Self {
         let diff = *other - self;
 
-        let (dx, dy) = match (diff.x, diff.y) {
-            (0, 0) => (0, 0),
-            (0, 1) | (0, -1) | (1, 0) | (-1, 0) => (0, 0),
-            (1, 1) | (-1, -1) | (1, -1) | (-1, 1) => (0, 0),
-            (0, 2) => (0, 1),
-            (0, -2) => (0, -1),
-            (2, 0) => (1, 0),
-            (-2, 0) => (-1, 0),
-
-            (2, 1) => (1, 1),
-            (2, -1) => (1, -1),
-            // need to move to the left diagonally
-            (-2, 1) => (-1, 1),
-            (-2, -1) => (-1, -1),
-            // need to move up/down diagonally
-            (1, 2) => (1, 1),
-            (-1, 2) => (-1, 1),
-            (1, -2) => (1, -1),
-            (-1, -2) => (-1, -1),
-            _ => (0, 0),
-        };
-
-        self.x += dx;
-        self.y += dy;
+        if diff.x.abs() > 1 || diff.y.abs() > 1 {
+            self.x += diff.x.signum();
+            self.y += diff.y.signum();
+        }
 
         //dbg!(&diff);
         self
@@ -92,7 +72,7 @@ impl Direction {
             "L" => Direction::Left,
             "U" => Direction::Up,
             "D" => Direction::Down,
-            _ => Direction::Right,
+            _ => unreachable!(),
         }
     }
 }
@@ -115,9 +95,7 @@ impl Command {
 }
 
 pub fn run(file: String) {
-    let mut head = Coord::new();
-    let mut tail = Coord::new();
-
+    let mut knots: Vec<Coord> = vec![Coord::new(); 10];
     let mut visited: HashSet<Coord> = HashSet::new();
 
     if let Ok(lines) = read_lines(&file) {
@@ -127,11 +105,15 @@ pub fn run(file: String) {
                 //dbg!(&cmd);
 
                 for _ in 0..cmd.steps {
-                    head = head.move_dir(&cmd.direction);
-                    tail = tail.follow(&head);
-                    //dbg!(&head);
+                    knots[0] = knots[0].move_dir(&cmd.direction);
+                    //dbg!(&knots[0]);
 
-                    visited.insert(tail);
+                    for i in 1..knots.len() {
+                        knots[i] = knots[i].follow(&knots[i - 1]);
+                        //dbg!(&knots[i]);
+                    }
+
+                    visited.insert(knots[knots.len() - 1]);
                 }
             }
         }
