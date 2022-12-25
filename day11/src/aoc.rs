@@ -126,13 +126,19 @@ fn calculate(operation: &Operation, old: u64) -> u64 {
 }
 
 fn round(monkeys: &mut Vec<Monkey>) {
+
+    let common_divisor: u64 = monkeys
+        .iter()
+        .map(|m| m.test.divisor )
+        .product();
+
     for i in 0..monkeys.len() {
         let monkey = &mut monkeys[i].clone();
 
         monkeys[i].inspected += monkey.items.len() as u64;
 
         for mut item in monkey.items.iter().copied() {
-            item = calculate(&monkey.operation, item) / 3;
+            item = calculate(&monkey.operation, item) % common_divisor;
 
             let idx = if item % monkey.test.divisor == 0 {
                 monkey.test.true_condition as usize
@@ -153,7 +159,7 @@ pub fn run(file: String) {
     if let Ok(i) = read_file(&file) {
         let mut monkeys = parse_monkeys(&i).finish().unwrap().1;
 
-        for _ in 0..20 {
+        for _ in 0..10000 {
             round(&mut monkeys);
         }
 
